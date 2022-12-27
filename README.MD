@@ -127,7 +127,31 @@ self.aa_activate_tesseract(
 # and even perform a multiline fuzzy search:
 xxx = self.aa_ocr_with_tesseract(search_for='Kontakte verwalten')
 ```
+```python
+# Use this method to update the screenshot 
+# The updated screenshot can be found here: self.screenshot
+self.aa_update_screenshot()
 
+```
+
+
+
+```python
+# get 5 screenshot within 5 seconds
+xx=self.aa_get_screenshots(
+        sleeptime=1,
+        number=5)
+
+```
+
+
+
+```python
+# Now you can use self.df to do operations on the screenshot 
+# More information about a_pandas_ex_image_tools:
+# https://github.com/hansalemaos/a_pandas_ex_image_tools
+self.aa_update_imagedf()
+```
 
 
 ```python
