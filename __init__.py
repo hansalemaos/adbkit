@@ -14,6 +14,8 @@ from a_cv2_shape_finder import (
 )
 from a_pandas_ex_adb_execute_activities import pd_add_adb_execute_activities
 
+from a_pandas_ex_image_tools import pd_add_image_tools
+
 pd_add_adb_execute_activities()
 import kthread
 import numpy as np
@@ -38,8 +40,6 @@ from a_pandas_ex_csv_plus import pd_add_convert_to_df
 from getevent_sendevent import GetEventSendEvent
 from sendevent_getevent_keyboard import SendEventKeystrokes
 from sendevent_touch import SendEventTouch
-
-from image_apd2 import pd_add_image_tools
 
 pd_add_convert_to_df()
 from touchtouch import touch
