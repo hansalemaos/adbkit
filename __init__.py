@@ -2376,6 +2376,7 @@ class ADBTools:
             tmp_folder_on_sd_card=tmp_folder_on_sd_card,
             bluestacks_divider=bluestacks_divider,
         )
+        andf.screenshot  = self.screenshot
         andf.get_df_from_view(with_screenshot=with_screenshot)
         _, df_uiautomator, _ = andf.get_all_results()
         return df_uiautomator
@@ -2410,6 +2411,7 @@ class ADBTools:
             tmp_folder_on_sd_card=tmp_folder_on_sd_card,
             bluestacks_divider=bluestacks_divider,
         )
+        andf.screenshot = self.screenshot
         andf.get_df_from_activity(with_screenshot=with_screenshot)
         df_activities, _, _ = andf.get_all_results()
         return df_activities
