@@ -2,6 +2,9 @@
 
 ## Tested against Windows 10, Python 3.9.13, BlueStacks 5
 
+**17/01/2023: Screenshot fix**
+
+
 ```python
 $pip install adbkit
 from adbkit import ADBTools
