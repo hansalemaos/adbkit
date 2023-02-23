@@ -1,6 +1,102 @@
 # Easier ADB automation 
 
-## Tested against Windows 10, Python 3.9.13, BlueStacks 5
+## Tested against Windows 10, Python 3.9.13, BlueStacks 5.9.300.1014 N32
+
+### pip install adbkit
+
+**23/02/2023: New methods**
+```python
+from adbkit import ADBTools
+adb_path = "C:\\Users\\Gamer\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe"
+deviceserial = "localhost:5555"
+self = ADBTools(adb_path=adb_path, deviceserial=deviceserial)
+self.aa_connect_to_device()
+self.aa_activate_tesseract(
+    tesseractpath=r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
+
+#####################################################################################
+# This method uses Tesseract! You can download it here: https://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-w64-setup-5.3.0.20221222.exe
+self.aa_update_screenshot() # Update the screenshot before 
+df=self.aa_ocr_elements_from_activities(['Play Store'], # pass all strings as a list 
+minpercentage=85, # fuzzy match
+maxtolerance=10,
+screenshotfolder="f:\\compare_android",  # screenshots will be saved here
+
+	max_variation_percent_x=10,  # used for one of the click functions, to not click exactly in the center - more information below
+	max_variation_percent_y=10,  # used for one of the click functions, to not click exactly in the center
+	loung_touch_delay=(
+		1000,
+		1500,
+	),  # with this settings longtouch will take somewhere between 1 and 1,5 seconds
+	swipe_variation_startx=10,  # swipe coordinate variations in percent
+	swipe_variation_endx=10,
+	swipe_variation_starty=10,
+	swipe_variation_endy=10,
+	sdcard="/storage/emulated/0/",  # sdcard will be used if you use the sendevent methods, don't pass a symlink - more information below
+	tmp_folder_on_sd_card="AUTOMAT",  # this folder will be created in the sdcard folder for using sendevent actions
+	bluestacks_divider=32767,  # coordinates must be recalculated for BlueStacks https://stackoverflow.com/a/73733261/15096247 when using sendevent
+)
+
+    aa_area       aa_bounds  aa_center_x  aa_center_x_cropped  aa_center_y  aa_center_y_cropped   aa_class_name aa_clickable aa_complete_dump aa_context_clickable  aa_cropped_x_end  aa_cropped_x_start  aa_cropped_y_end  aa_cropped_y_start aa_depth aa_drawn aa_enabled aa_focusable  aa_has_screenshot aa_hashcode_hex aa_hashcode_int  aa_height  aa_height_cropped aa_id_information  aa_is_child aa_long_clickable aa_mID_hex aa_mID_int aa_old_index aa_pflag_activated aa_pflag_dirty_mask aa_pflag_focused aa_pflag_hovered aa_pflag_invalidated aa_pflag_is_root_namespace aa_pflag_prepressed aa_pflag_selected aa_pure_id   aa_screenshot aa_scrollbars_horizontal aa_scrollbars_vertical      aa_shapely  aa_valid_square aa_visibility  aa_width  aa_width_cropped  aa_x_end aa_x_end_relative  aa_x_start aa_x_start_relative  aa_y_end aa_y_end_relative  aa_y_start aa_y_start_relative ee_aa_longtouch ee_aa_longtouch_bs ee_aa_longtouch_offset ee_aa_longtouch_offset_bs ee_aa_touch ee_aa_touch_bs ee_aa_touch_offset ee_aa_touch_offset_bs ff_aa_downswipe ff_aa_save_screenshot ff_aa_show_screenshot ff_aa_tap_center_offset ff_aa_tap_center_offset_long ff_aa_tap_center_variation ff_aa_tap_center_variation_long ff_aa_tap_exact_center ff_aa_tap_exact_center_long ff_aa_upswipe ff_show_parents  parent_000  parent_001  parent_002  parent_003  parent_004  parent_005  parent_006  parent_007  parent_008  parent_009  parent_010  parent_011 aa_scanned_text  aa_tesseract aa_closest_word  aa_resultdiff
+32  30192.0  (26, 26, 23...          128             128               100             100       com.bluesta...         True             ...            False                  230                26                 174                26            8     True       True        False            True            7529967       122853735        148             148               <NA>           True            True         <NA>       <NA>           14           False              False               False            False            False                False                      False               False         <NA>  [[[41, 12, ...           False                    False         POLYGON ((2...            True              V       204             204         230             204            26               0           174             148            26               0                  ()              ()                 ()                     ()                    ()             ()              ()                 ()                    ()              ()                    ()                    ()                      ()                           ()                         ()                              ()                     ()                        ()              ()           9           8           6           5           4           3           2           0        <NA>        <NA>        <NA>        <NA>      Play Store         100.0      Play Store            0.0
+
+
+
+#####################################################################################
+# Another example (Play Store written wrong)
+
+df2=self.aa_ocr_elements_from_uiautomator(['blai Store'],minpercentage=70, maxtolerance=10, )
+
+    aa_area       aa_bounds  aa_center_x  aa_center_x_cropped  aa_center_y  aa_center_y_cropped   aa_class_name aa_clickable aa_complete_dump aa_context_clickable  aa_cropped_x_end  aa_cropped_x_start  aa_cropped_y_end  aa_cropped_y_start aa_depth aa_drawn aa_enabled aa_focusable  aa_has_screenshot aa_hashcode_hex aa_hashcode_int  aa_height  aa_height_cropped aa_id_information  aa_is_child aa_long_clickable aa_mID_hex aa_mID_int aa_old_index aa_pflag_activated aa_pflag_dirty_mask aa_pflag_focused aa_pflag_hovered aa_pflag_invalidated aa_pflag_is_root_namespace aa_pflag_prepressed aa_pflag_selected aa_pure_id   aa_screenshot aa_scrollbars_horizontal aa_scrollbars_vertical      aa_shapely  aa_valid_square aa_visibility  aa_width  aa_width_cropped  aa_x_end aa_x_end_relative  aa_x_start aa_x_start_relative  aa_y_end aa_y_end_relative  aa_y_start aa_y_start_relative ee_aa_longtouch ee_aa_longtouch_bs ee_aa_longtouch_offset ee_aa_longtouch_offset_bs ee_aa_touch ee_aa_touch_bs ee_aa_touch_offset ee_aa_touch_offset_bs ff_aa_downswipe ff_aa_save_screenshot ff_aa_show_screenshot ff_aa_tap_center_offset ff_aa_tap_center_offset_long ff_aa_tap_center_variation ff_aa_tap_center_variation_long ff_aa_tap_exact_center ff_aa_tap_exact_center_long ff_aa_upswipe ff_show_parents  parent_000  parent_001  parent_002  parent_003  parent_004  parent_005  parent_006  parent_007  parent_008  parent_009  parent_010  parent_011 aa_scanned_text  aa_tesseract aa_closest_word  aa_resultdiff
+32  30192.0  (26, 26, 23...          128             128               100             100       com.bluesta...         True             ...            False                  230                26                 174                26            8     True       True        False            True            7529967       122853735        148             148               <NA>           True            True         <NA>       <NA>           14           False              False               False            False            False                False                      False               False         <NA>  [[[41, 12, ...           False                    False         POLYGON ((2...            True              V       204             204         230             204            26               0           174             148            26               0                  ()              ()                 ()                     ()                    ()             ()              ()                 ()                    ()              ()                    ()                    ()                      ()                           ()                         ()                              ()                     ()                        ()              ()           9           8           6           5           4           3           2           0        <NA>        <NA>        <NA>        <NA>      Play Store         100.0      Play Store            0.0
+
+#####################################################################################
+# Pass a list of tuples:
+((x,y),time in seconds)
+
+self.aa_multi_input_tap_with_delay([((100,100),2), ((200,200),3)])
+#####################################################################################
+
+self.aa_input_tap(x=100,y=100)
+
+#####################################################################################
+# https://github.com/hansalemaos/adbescapes
+# Converts Unicode string to ASCII and escapes all characters that need to be escaped. 
+# You have to activate it, before using it. The first start takes some time because numba needs to compile the code 
+self.aa_activate_input_text_formated()
+
+# input 
+text="""
+"'ąćęłń'\tóśźż\nĄĆĘŁŃÓŚŹŻ\n\"Junto à Estação de \nCarcavelos;\"" "äöüÄÖÜß"
+"""
+self.aa_input_text_formated_with_delay(text,delay=(0.01, 0.2),respect_german_letters=False, exit_keys="ctrl+x")
+
+
+# output
+"'aceln'    oszz
+ACELNOSZZ
+"Junto a Estacao de 
+Carcavelos;"" "aouAOUb"
+
+# If you want it the German way :)
+self.aa_input_text_formated(text,respect_german_letters=True, exit_keys="ctrl+x")
+
+"'aceln'    oszz
+ACELNOSZZ
+"Junto a Estacao de 
+Carcavelos;"" "aeoeueAeOeUess"
+#####################################################################################
+self.aa_install_apk_from_hdd(r"C:\Users\Gamer\anaconda3\envs\instcont\instagram.apk")
+#####################################################################################
+self.aa_uninstall_package('com.instagram.lite')
+#####################################################################################
+# First argument is a regex 
+self.aa_copy_apk_to_hdd('com.insta.*', 'c:\\instaapkdownload')
+#####################################################################################
+```
+
+
 
 **17/01/2023: Screenshot fix**
 
