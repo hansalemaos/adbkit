@@ -6,6 +6,7 @@ from time import sleep
 from typing import Union
 
 import a_pandas_ex_adb_execute_activities
+import rapidfuzz
 from PIL import Image
 from a_cv2_shape_finder import (
     get_shapes_using_THRESH_OTSU,
@@ -15,6 +16,7 @@ from a_cv2_shape_finder import (
 from a_pandas_ex_adb_execute_activities import pd_add_adb_execute_activities
 
 from a_pandas_ex_image_tools import pd_add_image_tools
+from adbescapes import ADBInputEscaped
 
 pd_add_adb_execute_activities()
 import kthread
@@ -52,7 +54,9 @@ from a_cv_imwrite_imread_plus import add_imwrite_plus_imread_plus_to_cv2
 
 add_imwrite_plus_imread_plus_to_cv2()
 add_imshow_thread_to_cv2()
+from a_pandas_ex_apply_ignore_exceptions import pd_add_apply_ignore_exceptions
 
+pd_add_apply_ignore_exceptions()
 import sys
 
 use_root = sys.modules[__name__]
@@ -355,6 +359,116 @@ def convert_to_THRESH_OTSU(im):
         cv2.THRESH_BINARY + cv2.THRESH_OTSU,
     )
     return threshg
+
+
+def uninstall_apk(
+    adb_path,
+    deviceserial,
+    apk,
+    exit_keys="ctrl+x",
+    print_output=True,
+    timeout=None,
+):
+    return execute_multicommands_adb_shell(
+        adb_path,
+        deviceserial,
+        subcommands=[f"pm uninstall {apk}"],
+        exit_keys=exit_keys,
+        print_output=print_output,
+        timeout=timeout,
+    )
+
+
+def install_apk_from_hdd(adb_path, deviceserial, savepathapk):
+    savepathapk = os.path.normpath(savepathapk)
+    subprocess.run(f"{adb_path} -s {deviceserial} install {savepathapk}")
+
+
+def copy_apk_to_hd(
+    adb_path,
+    deviceserial,
+    packageregex,
+    allpackages,
+    folder,
+    exit_keys="ctrl+x",
+    print_output=False,
+    timeout=None,
+):
+    alpa = allpackages.copy()
+    alpa = alpa.loc[
+        alpa["aa_name"].str.contains(packageregex, regex=True, na=False)
+    ].copy()
+    alpa["aa_folder"] = alpa.aa_path.str.replace("/[^/]+.apk$", "", regex=True)
+    return _apks_to_hdd(
+        adb_path,
+        deviceserial,
+        alpa,
+        folder,
+        exit_keys=exit_keys,
+        print_output=print_output,
+        timeout=timeout,
+    )
+
+
+def copy_apks_to_hd(
+    adb_path,
+    deviceserial,
+    allpackages,
+    folder,
+    exit_keys="ctrl+x",
+    print_output=False,
+    timeout=None,
+):
+    alpa = allpackages.copy()
+    alpa["aa_folder"] = alpa.aa_path.str.replace("/[^/]+.apk$", "", regex=True)
+    return _apks_to_hdd(
+        adb_path,
+        deviceserial,
+        allpackages,
+        folder,
+        exit_keys=exit_keys,
+        print_output=print_output,
+        timeout=timeout,
+    )
+
+
+def _apks_to_hdd(
+    adb_path,
+    deviceserial,
+    alpa,
+    folder,
+    exit_keys="ctrl+x",
+    print_output=False,
+    timeout=None,
+):
+
+    for key, item in alpa.iterrows():
+
+        apppa = item.aa_path
+        savefolder = item.aa_name
+        sf = os.path.normpath(os.path.join(folder, savefolder))
+        sffile = os.path.normpath(os.path.join(sf, apppa.strip("/").split("/")[-1]))
+
+        if not os.path.exists(sf):
+            os.makedirs(sf)
+        filax = b"".join(
+            [
+                x.replace(b"\r\n", b"\n")
+                for x in execute_multicommands_adb_shell(
+                    adb_path,
+                    deviceserial,
+                    subcommands=[f"cat {apppa}"],
+                    exit_keys=exit_keys,
+                    print_output=print_output,
+                    timeout=timeout,
+                )
+            ]
+        )
+        try:
+            with open(sffile, mode="wb") as f:
+                f.write(filax)
+        except Exception:
+            continue
 
 
 def _get_n_adb_screenshots(
@@ -2213,6 +2327,7 @@ class ADBTools:
         self.screenshot_gray = None
         self.tesseract = None
         self.df = None
+        self.bb_input_text = None
 
     def __str__(self):
         return self.deviceserial
@@ -2220,8 +2335,110 @@ class ADBTools:
     def __repr__(self):
         return self.deviceserial
 
+    def aa_uninstall_apk(
+        self,
+        apk,
+        exit_keys="ctrl+x",
+        print_output=True,
+        timeout=None,
+    ):
+        return uninstall_apk(
+            self.adb_path,
+            self.deviceserial,
+            apk,
+            exit_keys=exit_keys,
+            print_output=print_output,
+            timeout=timeout,
+        )
+
+    def aa_install_apk_from_hdd(self, path):
+        savepathapk = os.path.normpath(path)
+        subprocess.run(f"{self.adb_path} -s {self.deviceserial} install {savepathapk}")
+
+    def aa_copy_apk_to_hdd(
+        self,
+        packageregex,
+        folder,
+        exit_keys="ctrl+x",
+        print_output=False,
+        timeout=None,
+    ):
+        allpackages = self.aa_list_all_packages(exit_keys, print_output, timeout)
+        copy_apk_to_hd(
+            self.adb_path,
+            self.deviceserial,
+            packageregex,
+            allpackages,
+            folder,
+            exit_keys=exit_keys,
+            print_output=print_output,
+            timeout=timeout,
+        )
+
+    def aa_copy_all_apks_to_hdd(
+        self,
+        folder,
+        exit_keys="ctrl+x",
+        print_output=False,
+        timeout=None,
+    ):
+        allpackages = self.aa_list_all_packages(exit_keys, print_output, timeout)
+
+        copy_apks_to_hd(
+            self.adb_path,
+            self.deviceserial,
+            allpackages,
+            folder,
+            exit_keys=exit_keys,
+            print_output=print_output,
+            timeout=timeout,
+        )
+
+    def aa_input_text_formated(
+        self, text, respect_german_letters=False, exit_keys="ctrl+x"
+    ):
+        self.bb_input_text.escape_text_and_send(
+            text, respect_german_letters=respect_german_letters, exit_keys=exit_keys
+        )
+        return self
+
+    def aa_input_text_formated_with_delay(
+        self, text, delay=(0.01, 0.2), respect_german_letters=False, exit_keys="ctrl+x"
+    ):
+        self.bb_input_text.escape_text_and_send_with_delay(
+            text,
+            delay=delay,
+            respect_german_letters=respect_german_letters,
+            exit_keys=exit_keys,
+        )
+        return self
+
+    def aa_activate_input_text_formated(self, debug=True):
+        self.bb_input_text = ADBInputEscaped(
+            adb_path=self.adb_path, deviceserial=self.deviceserial
+        )
+        # adbk.connect_to_device()
+        if debug:
+            self.bb_input_text.activate_debug()
+        return self
+
     def aa_update_imagedf(self):
         self.df = pd.Q_image2df(self.screenshot)
+
+    def aa_input_tap(self, x, y):
+        x, y = int(x), int(y)
+        self.aa_execute_multiple_adb_shell_commands([f"input tap {x} {y}"])
+        return self
+
+    def aa_multi_input_tap_with_delay(self, coords_and_timeout):
+        allco = []
+        for co, ti in coords_and_timeout:
+            coadd = f"input tap {int(co[0])} {int(co[1])}"
+            tisl = f"sleep {round(ti, 3)}"
+            allco.append(coadd)
+            allco.append(tisl)
+        self.aa_execute_multiple_adb_shell_commands(allco)
+        return self
 
     def aa_update_screenshot(self, color_and_gray=True):
         self.screenshot = next(
@@ -2376,7 +2593,7 @@ class ADBTools:
             tmp_folder_on_sd_card=tmp_folder_on_sd_card,
             bluestacks_divider=bluestacks_divider,
         )
-        andf.screenshot  = self.screenshot
+        andf.screenshot = self.screenshot
         andf.get_df_from_view(with_screenshot=with_screenshot)
         _, df_uiautomator, _ = andf.get_all_results()
         return df_uiautomator
@@ -2446,7 +2663,7 @@ class ADBTools:
         timeout: Union[float, int, None] = None,
         remove_control_characters: bool = True,
     ):
-        has_root_access = (use_root.enabled,)
+        has_root_access = use_root.enabled
 
         return adb_grep(
             self.adb_path,
@@ -3553,6 +3770,154 @@ class ADBTools:
             print_output=print_output,
             timeout=timeout,
         )
+
+    def aa_ocr_elements_from_activities(
+        self,
+        allstrings,
+        minpercentage=85,
+        maxtolerance=10,
+        screenshotfolder: Union[str, None] = None,
+        max_variation_percent_x: int = 10,
+        max_variation_percent_y: int = 10,
+        loung_touch_delay: tuple[int, int] = (1000, 1500),
+        swipe_variation_startx: int = 10,
+        swipe_variation_endx: int = 10,
+        swipe_variation_starty: int = 10,
+        swipe_variation_endy: int = 10,
+        sdcard: str = "/storage/emulated/0/",
+        tmp_folder_on_sd_card: str = "AUTOMAT",
+        bluestacks_divider: int = 32767,
+    ):
+        if not isinstance(allstrings, (list, tuple)):
+            allstrings = [allstrings]
+        with_screenshot = True
+
+        andf = AndroDF(
+            adb_path=self.adb_path,
+            deviceserial=self.deviceserial,
+            screenshotfolder=screenshotfolder,  # screenshots will be saved here
+            max_variation_percent_x=max_variation_percent_x,
+            max_variation_percent_y=max_variation_percent_y,  # used for one of the click functions, to not click exactly in the center
+            loung_touch_delay=loung_touch_delay,
+            swipe_variation_startx=swipe_variation_startx,  # swipe coordinate variations in percent
+            swipe_variation_endx=swipe_variation_endx,
+            swipe_variation_starty=swipe_variation_starty,
+            swipe_variation_endy=swipe_variation_endy,
+            sdcard=sdcard,
+            tmp_folder_on_sd_card=tmp_folder_on_sd_card,
+            bluestacks_divider=bluestacks_divider,
+        )
+        andf.screenshot = self.screenshot
+        andf.get_df_from_activity(with_screenshot=with_screenshot)
+        df_activities, _, _ = andf.get_all_results()
+        return self._ocr_with_tesseract_and_fuzzy_search(
+            df_activities,
+            "aa_",
+            allstrings,
+            minpercentage=minpercentage,
+            maxtolerance=maxtolerance,
+        )
+
+    def aa_ocr_elements_from_uiautomator(
+        self,
+        allstrings,
+        minpercentage=85,
+        maxtolerance=10,
+        screenshotfolder: Union[str, None] = None,
+        max_variation_percent_x: int = 10,
+        max_variation_percent_y: int = 10,
+        loung_touch_delay: tuple[int, int] = (1000, 1500),
+        swipe_variation_startx: int = 10,
+        swipe_variation_endx: int = 10,
+        swipe_variation_starty: int = 10,
+        swipe_variation_endy: int = 10,
+        sdcard: str = "/storage/emulated/0/",
+        tmp_folder_on_sd_card: str = "AUTOMAT",
+        bluestacks_divider: int = 32767,
+    ):
+        if not isinstance(allstrings, (list, tuple)):
+            allstrings = [allstrings]
+        with_screenshot = True
+
+        andf = AndroDF(
+            adb_path=self.adb_path,
+            deviceserial=self.deviceserial,
+            screenshotfolder=screenshotfolder,  # screenshots will be saved here
+            max_variation_percent_x=max_variation_percent_x,
+            max_variation_percent_y=max_variation_percent_y,  # used for one of the click functions, to not click exactly in the center
+            loung_touch_delay=loung_touch_delay,
+            swipe_variation_startx=swipe_variation_startx,  # swipe coordinate variations in percent
+            swipe_variation_endx=swipe_variation_endx,
+            swipe_variation_starty=swipe_variation_starty,
+            swipe_variation_endy=swipe_variation_endy,
+            sdcard=sdcard,
+            tmp_folder_on_sd_card=tmp_folder_on_sd_card,
+            bluestacks_divider=bluestacks_divider,
+        )
+        andf.screenshot = self.screenshot
+        andf.get_df_from_view(with_screenshot=with_screenshot)
+        _, df_uiautomator, _ = andf.get_all_results()
+        # df=self.aa_get_all_displayed_items_from_uiautomator()
+        return self._ocr_with_tesseract_and_fuzzy_search(
+            df_uiautomator,
+            "bb_",
+            allstrings,
+            minpercentage=minpercentage,
+            maxtolerance=maxtolerance,
+        )
+
+    def _ocr_with_tesseract_and_fuzzy_search(
+        self, df, prefix, allstrings, minpercentage=85, maxtolerance=10
+    ):
+
+        prefix = "bb_"
+        checkpref = [x for x in df.columns if str(x).startswith(prefix)]
+        if not checkpref:
+            prefix = "aa_"
+        # df=update_screenshot_and_get_activities_df(self,screenshotfolder=screenshotfolder)
+        drodf = df.dropna(subset=f"{prefix}screenshot").copy()
+        tesserscan = drodf.copy()
+        tesserscan2 = drodf.copy()
+        for key, item in tesserscan.iterrows():
+            varx = " ".join(
+                self.aa_ocr_with_tesseract(item[f"{prefix}screenshot"])[
+                    0
+                ].text.to_list()
+            )
+            tesserscan2.at[key, f"{prefix}scanned_text"] = regex.sub(
+                r"\s+", " ", varx.strip()
+            )  # print(tesserscan2)
+
+        for ini, searchstring in enumerate(allstrings):
+            tesserscan2[searchstring] = tesserscan2[
+                f"{prefix}scanned_text"
+            ].ds_apply_ignore(pd.NA, lambda x: rapidfuzz.fuzz.ratio(searchstring, x))
+
+        tes3 = tesserscan2.copy()
+        alltes = []
+        for stri in allstrings:
+            tesserscan2 = tes3.drop(columns=[x for x in allstrings if x != stri]).copy()
+            # print(tesserscan2)
+            tesserscan2 = tesserscan2.rename(columns={stri: f"{prefix}tesseract"})
+            tesserscan2[f"{prefix}closest_word"] = stri
+            tesserscan2 = tesserscan2.sort_values(
+                by=f"{prefix}tesseract", ascending=-False
+            )
+            tesserscan2[f"{prefix}resultdiff"] = (
+                tesserscan2[f"{prefix}tesseract"]
+                - tesserscan2[f"{prefix}tesseract"].iloc[0]
+            )
+            goodres = tesserscan2.loc[
+                tesserscan2[f"{prefix}tesseract"].ds_apply_ignore(
+                    pd.NA, lambda x: x - tesserscan2[f"{prefix}tesseract"].iloc[0]
+                )
+                > -maxtolerance
+            ]
+            alltes.append(goodres)
+
+        dft = pd.concat(alltes).copy()
+        dft = dft.loc[dft[f"{prefix}tesseract"] > minpercentage]
+        return dft
 
     def aa_ocr_with_tesseract(
         self,
