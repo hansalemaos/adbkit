@@ -18,6 +18,8 @@ from a_pandas_ex_adb_execute_activities import pd_add_adb_execute_activities
 from a_pandas_ex_image_tools import pd_add_image_tools
 from adbescapes import ADBInputEscaped
 
+from adbdevicechanger import AdbChanger
+
 pd_add_adb_execute_activities()
 import kthread
 import numpy as np
@@ -2323,6 +2325,7 @@ class ADBTools:
         self.bb_sendevent_keyboard = None
         self.bb_getevent_sendevent = None
         self.bb_sendevent_touch = None
+        self.bb_adbdevicechanger = None
         self.screenshot = None
         self.screenshot_gray = None
         self.tesseract = None
@@ -2334,6 +2337,16 @@ class ADBTools:
 
     def __repr__(self):
         return self.deviceserial
+
+    def aa_activate_adbdevicechanger(
+        self,
+    ):
+        self.bb_adbdevicechanger = AdbChanger(
+            adb_path=self.adb_path,
+            deviceserial=self.deviceserial,
+        )
+
+        return self
 
     def aa_uninstall_apk(
         self,
