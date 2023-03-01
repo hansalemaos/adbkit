@@ -4,6 +4,70 @@
 
 ### pip install adbkit
 
+**Don't get confused about the instance "self". I did it because it is faster copying methods from the class :)** 
+
+
+**01/03/2023: Added adbdevicechanger** 
+```python
+# https://github.com/hansalemaos/adbdevicechanger
+# tested with bluestacks - root access
+self.aa_activate_adbdevicechanger()
+self.bb_adbdevicechanger.change_android_id()
+
+b'Row: 0 _id=227, name=device_name, value=OnePlus 5T\r\n'
+Out[7]: ('f7a32086dc724a4a', 'OnePlus 5T')
+
+
+self.bb_adbdevicechanger.change_device_name(
+    modelregex=".*",
+    developerregex=".*",
+    androidfullnameregex=".*",
+    year=">1",
+    month=">0",
+    versionnumberaround=7.05,
+)
+b'Row: 0 _id=2340, name=android_id, value=f7a32086dc724a4a\r\n'
+b'Row: 0 _id=228, name=device_name, value=HTC U11\r\n'
+Out[8]: ('f7a32086dc724a4a', 'HTC U11')
+
+self.bb_adbdevicechanger.change_android_id_and_device_name(
+    modelregex=".*",
+    developerregex=".*",
+    androidfullnameregex=".*",
+    year=">1",
+    month=">0",
+    versionnumberaround=7.05,
+)
+b'Row: 0 _id=2341, name=android_id, value=fb9afc93197942d8\r\n'
+b'Row: 0 _id=229, name=device_name, value=Nokia 8\r\n'
+Out[9]: ('fb9afc93197942d8', 'Nokia 8')
+
+
+self.bb_adbdevicechanger.get_random_android_cellphones(    modelregex="Samsung.*",
+    developerregex=".*",
+    androidfullnameregex=".*",
+    year=">2010",
+    month=">0",
+    versionnumberaround=9.05,
+    howmany=10,
+    return_list=False,)
+Out[13]: 
+                       aa_model  ...              uuid
+0  Samsung Galaxy Note 20/Ultra  ...  36f8a604180b4d7f
+1            Samsung Galaxy A70  ...  cb7f374cd85d4330
+2      Samsung Galaxy A30s/A50s  ...  9380749deb5942f6
+3      Samsung Galaxy Note 10/+  ...  c36816b1906542dc
+4    Samsung Galaxy S20/+/Ultra  ...  33dc12217b404a62
+5         Samsung Galaxy A90 5G  ...  cf0084fa8261465d
+6      Samsung Galaxy A51 5G UW  ...  3177aa09b1fc40d9
+7            Samsung Galaxy A01  ...  44db6d59366143cd
+8         Samsung Galaxy A42 5G  ...  a5b6fb2d08ac4475
+9           Samsung Galaxy A20e  ...  806b4ae287ec4d34
+[10 rows x 10 columns]
+
+```
+
+
 **23/02/2023: New methods**
 ```python
 from adbkit import ADBTools
