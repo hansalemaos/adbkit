@@ -4,11 +4,15 @@ a_cv_imwrite_imread_plus
 a_pandas_ex_adb_execute_activities
 a_pandas_ex_adb_settings_to_df
 a_pandas_ex_adb_to_df
+a_pandas_ex_apply_ignore_exceptions
 a_pandas_ex_csv_plus
+a_pandas_ex_image_tools
 a_pandas_ex_logcat2df
 a_pandas_ex_tesseract_multirow_regex_fuzz
 adb_grep_search
 adb_unicode_keyboard
+adbdevicechanger
+adbescapes
 androdf
 flatten_everything
 getevent_sendevent
@@ -19,6 +23,7 @@ pandas
 Pillow
 psutil
 pyperclip
+rapidfuzz
 regex
 sendevent_getevent_keyboard
 sendevent_touch
