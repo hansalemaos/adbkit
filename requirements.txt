@@ -14,6 +14,8 @@ adb_unicode_keyboard
 adbdevicechanger
 adbescapes
 androdf
+bstconnect
+check_if_nan
 flatten_everything
 getevent_sendevent
 kthread
@@ -28,4 +30,5 @@ regex
 sendevent_getevent_keyboard
 sendevent_touch
 subprocess_print_and_capture
+tesseractmultiprocessing
 touchtouch
