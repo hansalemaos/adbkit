@@ -19,6 +19,9 @@ from a_pandas_ex_image_tools import pd_add_image_tools
 from adbescapes import ADBInputEscaped
 
 from adbdevicechanger import AdbChanger
+from bstconnect import connect_to_all_localhost_devices
+from check_if_nan import is_nan
+from tesseractmultiprocessing import tesser2df
 
 pd_add_adb_execute_activities()
 import kthread
@@ -2316,11 +2319,30 @@ def list_all_packages(
     ).rename(columns={0: "aa_path", 1: "aa_name"})
 
 
+def connect_to_all_bluestacks_hyperv_devices(
+    adb_path,
+    timeout=10,
+    bluestacks_config=r"C:\ProgramData\BlueStacks_nxt\bluestacks.conf",
+):
+    df = connect_to_all_localhost_devices(
+        adb_path=adb_path,
+        timeout=timeout,
+        bluestacks_config=bluestacks_config,
+    )
+    df = df.loc[df.status == "device"].reset_index(drop=True).copy()
+    df["aa_adbtools"] = df.localhost.apply(
+        lambda x: ADBTools(adb_path=adb_path, deviceserial=f"localhost:{x}")
+    )
+    df.aa_adbtools.apply(lambda x: x.aa_connect_to_device())
+    return df
+
+
 class ADBTools:
     def __init__(self, adb_path, deviceserial, sdcard="/sdcard/"):
         self.adb_path = adb_path
         self.deviceserial = deviceserial
         self.sdcard = sdcard
+        self.tesseractpath = None
         self.bb_adbkeyboard = None
         self.bb_sendevent_keyboard = None
         self.bb_getevent_sendevent = None
@@ -2337,6 +2359,16 @@ class ADBTools:
 
     def __repr__(self):
         return self.deviceserial
+
+    @staticmethod
+    def connect_to_all_bluestacks_hyperv_devices(
+        adb_path,
+        timeout=10,
+        bluestacks_config=r"C:\ProgramData\BlueStacks_nxt\bluestacks.conf",
+    ):
+        return connect_to_all_bluestacks_hyperv_devices(
+            adb_path, timeout=timeout, bluestacks_config=bluestacks_config
+        )
 
     def aa_activate_adbdevicechanger(
         self,
@@ -3932,6 +3964,51 @@ class ADBTools:
         dft = dft.loc[dft[f"{prefix}tesseract"] > minpercentage]
         return dft
 
+    def aa_ocr_df_with_tesseract_multiprocessing(
+        self,
+        df,
+        language="eng",
+        cpus=5,
+    ):
+        df = df.reset_index(drop=True)
+        prefix = "bb_"
+        checkpref = [x for x in df.columns if str(x).startswith(prefix)]
+        if not checkpref:
+            prefix = "aa_"
+
+        pics = df[f"{prefix}screenshot"].to_list()
+        pics = [x if not is_nan(x) else np.array([], dtype=np.uint8) for x in pics]
+
+        output = tesser2df(
+            pics,
+            language=language,
+            pandas_kwargs={"on_bad_lines": "warn"},
+            tesser_args=(),
+            cpus=cpus,
+            tesser_path=self.tesseractpath,
+        )
+
+        firstfilter = {
+            x[0].img_index.iloc[0]: regex.sub(
+                r"\s+", " ", " ".join(x[0].text.fillna("")).strip()
+            )
+            for x in output
+            if not x[0].empty
+        }
+        for q in range(len(df)):
+            if q not in firstfilter:
+                firstfilter[q] = ""
+        return pd.concat(
+            [
+                df,
+                df.index.map(firstfilter)
+                .to_series()
+                .reset_index()
+                .rename(columns={0: f"{prefix}scanned_text"})[f"{prefix}scanned_text"],
+            ],
+            axis=1,
+        )
+
     def aa_ocr_with_tesseract(
         self,
         screenshot=None,
@@ -3994,6 +4071,7 @@ class ADBTools:
     def aa_activate_tesseract(
         self, tesseractpath=r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     ):
+        self.tesseractpath = tesseractpath
         pd_add_tesseract(tesseractpath=tesseractpath)
         pd_add_regex_fuzz_multiline()
         return self
