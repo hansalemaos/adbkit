@@ -1,6 +1,7 @@
 # Easier ADB automation 
 
 ## Tested against Windows 10, Python 3.9.13, BlueStacks 5.9.300.1014 N32
+### Cygwin is necessary: https://www.cygwin.com/setup-x86_64.exe and needs to be added to the path variable!
 
 ### pip install adbkit
 
