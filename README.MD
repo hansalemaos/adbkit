@@ -7,6 +7,38 @@
 
 **Don't get confused about the instance "self". I did it because it is faster copying methods from the class :)** 
 
+**28/05/2023: Added fast screenshots with scrcpy - no root required and some other methods** 
+
+```python
+from adbkit import ADBTools
+from kthread_sleep import sleep
+
+adb_path = r'C:\ProgramData\chocolatey\bin\adb.exe'
+deviceserial = "localhost:5555"
+ADBTools.aa_kill_all_running_adb_instances()
+
+self = ADBTools(adb_path=adb_path, deviceserial=deviceserial)
+self.aa_start_server() # creates a new process which is not a child process
+sleep(3)
+self.aa_connect_to_device()
+self.aa_activate_scrcpy_screenshots_tcp(adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0)
+
+# for a usb connection:
+# self.aa_activate_scrcpy_screenshots_usb(adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0)
+
+
+# each killkey combination can only be used once!
+self.aa_show_screenshot( sleeptime=1, killkeys="ctrl+alt+h")
+
+# How to stop showing screenshots
+# press the killkeys combination "ctrl+alt+h" and call the method aa_kill_show_screenshot to kill all threads
+self.aa_kill_show_screenshot()
+
+# once your done with everything, make sure to close the scrcpy connection:
+self.aa_kill_scrcpy_connection()
+
+```
+
 **10/03/2023: Tesseract with multiprocessing / Bluestacks Hyper-V connect** 
 
 ```python

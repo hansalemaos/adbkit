@@ -1,6 +1,7 @@
 import glob
 import os
 import subprocess
+from collections import deque, defaultdict
 from functools import reduce
 from time import sleep
 from typing import Union
@@ -21,6 +22,8 @@ from adbescapes import ADBInputEscaped
 from adbdevicechanger import AdbChanger
 from bstconnect import connect_to_all_localhost_devices
 from check_if_nan import is_nan
+from cv2imshow.cv2imshow import cv2_imshow_multi
+from taskkill import taskkill_regex_rearch
 from tesseractmultiprocessing import tesser2df
 
 pd_add_adb_execute_activities()
@@ -63,11 +66,23 @@ from a_pandas_ex_apply_ignore_exceptions import pd_add_apply_ignore_exceptions
 
 pd_add_apply_ignore_exceptions()
 import sys
+from adbblitz import AdbShotUSB, AdbShotTCP, mainprocess
 
 use_root = sys.modules[__name__]
 
 use_root.enabled = False
 pd_add_image_tools()
+
+startupinfo = subprocess.STARTUPINFO()
+creationflags = 0 | subprocess.CREATE_NO_WINDOW
+startupinfo.wShowWindow = subprocess.SW_HIDE
+invisibledict = {
+    "startupinfo": startupinfo,
+    "creationflags": creationflags,
+    "start_new_session": True,
+}
+dequelist = lambda: deque([], 1)
+_screenshots = defaultdict(dequelist)
 
 
 def _draw_shapes_result(image, df, min_area=200):
@@ -271,19 +286,35 @@ def kill_server(
     )
 
 
+def kill_all_running_adbs():
+    return taskkill_regex_rearch(
+        dryrun=False,
+        kill_children=True,
+        force_kill=True,
+        flags_title=regex.I,
+        windowtext=".*",
+        flags_windowtext=regex.I,
+        class_name=".*",
+        flags_class_name=regex.I,
+        path=r"\badb.exe$",
+        flags_path=regex.I,
+    )
+
+
 def start_server(
     adb_path,
     exit_keys="ctrl+x",
     print_output=True,
     timeout=None,
 ):
-    return execute_adb_without_shell(
-        adb_path,
-        command="start-server",
-        exit_keys=exit_keys,
-        print_output=print_output,
-        timeout=timeout,
-    )
+    mainprocess([adb_path, "start-server"])
+    # return execute_adb_without_shell(
+    #     adb_path,
+    #     command="start-server",
+    #     exit_keys=exit_keys,
+    #     print_output=print_output,
+    #     timeout=timeout,
+    # )
 
 
 def reboot_and_listen_to_usb(
@@ -309,17 +340,34 @@ def connect_to_adb(adb_path, deviceserial):
 
 
 def get_screen_height_width(adb_path, deviceserial):
-    screenwidth, screenheight = (
-        subprocess.run(
-            rf'{adb_path} -s {deviceserial} shell dumpsys window | grep cur= |tr -s " " | cut -d " " -f 4|cut -d "=" -f 2',
+    try:
+        p = subprocess.run(
+            rf"{adb_path} -s {deviceserial} shell dumpsys window",
             shell=True,
             capture_output=True,
+            **invisibledict,
         )
-        .stdout.decode("utf-8", "ignore")
-        .strip()
-        .split("x")
-    )
-    screenwidth, screenheight = int(screenwidth), int(screenheight)
+        screenwidth, screenheight = [
+            int(x)
+            for x in regex.findall(rb"cur=(\d{,4}x\d{,4}\b)", p.stdout)[0]
+            .lower()
+            .split(b"x")
+        ]
+        print(screenheight, screenwidth)
+
+    except Exception:
+        screenwidth, screenheight = (
+            subprocess.run(
+                rf'{adb_path} -s {deviceserial} shell dumpsys window | grep cur= |tr -s " " | cut -d " " -f 4|cut -d "=" -f 2',
+                shell=True,
+                capture_output=True,
+                **invisibledict,
+            )
+            .stdout.decode("utf-8", "ignore")
+            .strip()
+            .split("x")
+        )
+        screenwidth, screenheight = int(screenwidth), int(screenheight)
     return screenwidth, screenheight
 
 
@@ -446,9 +494,7 @@ def _apks_to_hdd(
     print_output=False,
     timeout=None,
 ):
-
     for key, item in alpa.iterrows():
-
         apppa = item.aa_path
         savefolder = item.aa_name
         sf = os.path.normpath(os.path.join(folder, savefolder))
@@ -1644,7 +1690,7 @@ def get_procstats(
                 ]
             )
         )
-        for i in regex.split(b"[\r\n]+\s*[\r\n]+\s*[\r\n]+", b"".join(xx))
+        for i in regex.split(rb"[\r\n]+\s*[\r\n]+\s*[\r\n]+", b"".join(xx))
     ]:
         dfra.columns = range(dfra.shape[1])
         delcol = None
@@ -2138,7 +2184,6 @@ def add_new_contact(
     print_output=True,
     timeout=None,
 ):
-
     reas = execute_multicommands_adb_shell(
         adb_path,
         deviceserial,
@@ -2337,6 +2382,17 @@ def connect_to_all_bluestacks_hyperv_devices(
     return df
 
 
+def show_screenshots(title, sleeptime, killkeys="ctrl+alt+h"):
+    while True:
+        sleep(sleeptime)
+        if len(_screenshots[killkeys]) > 0:
+            cv2_imshow_multi(
+                title=title,
+                image=_screenshots[killkeys][0],
+                killkeys=killkeys,  # switch on/off
+            )
+
+
 class ADBTools:
     def __init__(self, adb_path, deviceserial, sdcard="/sdcard/"):
         self.adb_path = adb_path
@@ -2353,12 +2409,119 @@ class ADBTools:
         self.tesseract = None
         self.df = None
         self.bb_input_text = None
+        self.scrcpy_screenshot_usb = None
+        self.scrcpy_screenshot_tcp = None
+        self._show_screenshot_thread = None
+        self._add_new_screenshot_thread = None
+        self._screenshotkillkeys = None
 
     def __str__(self):
         return self.deviceserial
 
     def __repr__(self):
         return self.deviceserial
+
+    def _start_show_screenshot(self, title, killkeys="ctrl+alt+h", sleeptime=1):
+        self._add_new_screenshot_thread = kthread.KThread(
+            target=self._add_new_screenshots,
+            name=str(killkeys),
+            args=(sleeptime, killkeys),
+        )
+        self._add_new_screenshot_thread.start()
+        self._show_screenshot_thread = kthread.KThread(
+            target=show_screenshots,
+            name=str(killkeys),
+            args=(title, sleeptime, killkeys),
+        )
+        self._show_screenshot_thread.start()
+
+    def _add_new_screenshots(self, sleeptime, killkeys):
+        self._screenshotkillkeys = killkeys
+        while True:
+            _screenshots[killkeys].append(self.screenshot.copy())
+            sleep(sleeptime)
+
+    def aa_kill_show_screenshot(self):
+        print(
+            f"Press {self._screenshotkillkeys} to close the screenshot window if you haven't closed it yet"
+        )
+        try:
+            if self._add_new_screenshot_thread:
+                while self._add_new_screenshot_thread.is_alive():
+                    self._add_new_screenshot_thread.kill()
+        except Exception:
+            pass
+        try:
+            if self._show_screenshot_thread:
+                while self._show_screenshot_thread.is_alive():
+                    self._show_screenshot_thread.kill()
+        except Exception:
+            pass
+        try:
+            del _screenshots[self._screenshotkillkeys]
+        except Exception:
+            pass
+
+    def aa_kill_scrcpy_connection(self):
+        if self.scrcpy_screenshot_usb:
+            try:
+                self.scrcpy_screenshot_usb.quit()
+            except Exception:
+                pass
+        if self.scrcpy_screenshot_tcp:
+            try:
+                self.scrcpy_screenshot_tcp.quit()
+            except Exception:
+                pass
+
+    def aa_show_screenshot(self, sleeptime=1, killkeys="ctrl+alt+h"):
+        if is_nan(self.screenshot):
+            self.aa_update_screenshot()
+        if killkeys in _screenshots:
+            raise ValueError(f"Killkeys {killkeys} are already being used!")
+        else:
+            print(f"Use {killkeys} to turn imshow on/off")
+            self._start_show_screenshot(str(self.deviceserial), killkeys, sleeptime)
+
+    def aa_activate_scrcpy_screenshots_usb(
+        self, adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0
+    ):
+        self.scrcpy_screenshot_usb = AdbShotUSB(
+            device_serial=self.deviceserial,
+            adb_path=self.adb_path,
+            adb_host_address=adb_host_address,
+            adb_host_port=adb_host_port,
+            sleep_after_exception=0.05,
+            frame_buffer=4,
+            lock_video_orientation=lock_video_orientation,
+            max_frame_rate=0,
+            byte_package_size=131072,
+            scrcpy_server_version="2.0",
+            log_level="info",
+            max_video_width=0,
+            start_server=False,
+            connect_to_device=False,
+        )
+
+    def aa_activate_scrcpy_screenshots_tcp(
+        self, adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0
+    ):
+        self.scrcpy_screenshot_tcp = AdbShotTCP(
+            device_serial=self.deviceserial,
+            adb_path=self.adb_path,
+            ip=adb_host_address,
+            port=adb_host_port,
+            sleep_after_exception=0.05,
+            frame_buffer=4,
+            lock_video_orientation=lock_video_orientation,
+            max_frame_rate=0,
+            byte_package_size=131072,
+            scrcpy_server_version="2.0",
+            log_level="info",
+            max_video_width=0,
+            start_server=False,
+            connect_to_device=False,
+        )
 
     @staticmethod
     def connect_to_all_bluestacks_hyperv_devices(
@@ -2486,13 +2649,18 @@ class ADBTools:
         return self
 
     def aa_update_screenshot(self, color_and_gray=True):
-        self.screenshot = next(
-            self.aa_get_screenshots(
-                sleeptime=0,
-                number=1,
-                gray=False,
+        if self.scrcpy_screenshot_tcp:
+            self.screenshot = self.scrcpy_screenshot_tcp.get_one_screenshot()
+        elif self.scrcpy_screenshot_usb:
+            self.screenshot = self.scrcpy_screenshot_usb.get_one_screenshot()
+        else:
+            self.screenshot = next(
+                self.aa_get_screenshots(
+                    sleeptime=0,
+                    number=1,
+                    gray=False,
+                )
             )
-        )
         if color_and_gray:
             self.screenshot_gray = open_image_in_cv(
                 self.screenshot, channels_in_output=2
@@ -2679,7 +2847,6 @@ class ADBTools:
         return df_activities
 
     def aa_list_folder_content(self, folder_to_search):
-
         return get_folder_df(self.deviceserial, self.adb_path, folder=folder_to_search)
 
     def aa_list_all_files_on_device(self):
@@ -3116,7 +3283,6 @@ class ADBTools:
         )
 
     def aa_getprop(self, exit_keys="ctrl+x", print_output=True, timeout=None):
-
         return getprop(
             self.adb_path,
             self.deviceserial,
@@ -3465,7 +3631,6 @@ class ADBTools:
         print_output=True,
         timeout=None,
     ):
-
         return disable_autoupdate_for_package(
             self.adb_path,
             self.deviceserial,
@@ -3484,7 +3649,6 @@ class ADBTools:
         print_output=True,
         timeout=None,
     ):
-
         return enable_autoupdate_for_package(
             self.adb_path,
             self.deviceserial,
@@ -3691,7 +3855,6 @@ class ADBTools:
         ADAPTIVE_THRESH_GAUSSIAN_C=False,
         THRESH_OTSU=False,
     ):
-
         return _get_n_adb_screenshots(
             self.adb_path,
             self.deviceserial,
@@ -3716,6 +3879,8 @@ class ADBTools:
         self.aa_kill_server()
         sleep(2)
         if killadb:
+            kill_all_running_adbs()
+
             PROCNAME = "adb.exe"
             for proc in psutil.process_iter():
                 try:
@@ -3742,16 +3907,19 @@ class ADBTools:
 
     def aa_start_server(
         self,
-        exit_keys="ctrl+x",
-        print_output=True,
-        timeout=None,
+        *args,
+        **kwargs
+        # exit_keys="ctrl+x",
+        # print_output=True,
+        # timeout=None,
     ):
         start_server(
             self.adb_path,
-            exit_keys=exit_keys,
-            print_output=print_output,
-            timeout=timeout,
         )
+
+    @staticmethod
+    def aa_kill_all_running_adb_instances():
+        return kill_all_running_adbs()
 
     def aa_stop_server(
         self,
@@ -3914,7 +4082,6 @@ class ADBTools:
     def _ocr_with_tesseract_and_fuzzy_search(
         self, df, prefix, allstrings, minpercentage=85, maxtolerance=10
     ):
-
         prefix = "bb_"
         checkpref = [x for x in df.columns if str(x).startswith(prefix)]
         if not checkpref:
@@ -4088,7 +4255,6 @@ class ADBTools:
             )
         )[0]
         try:
-
             updatedlines = []
             with open(conffile, mode="rb") as f:
                 data = f.read()
