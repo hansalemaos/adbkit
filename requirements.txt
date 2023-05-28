@@ -11,17 +11,20 @@ a_pandas_ex_logcat2df
 a_pandas_ex_tesseract_multirow_regex_fuzz
 adb_grep_search
 adb_unicode_keyboard
+adbblitz
 adbdevicechanger
 adbescapes
 androdf
 bstconnect
 check_if_nan
+cv2imshow
 flatten_everything
 getevent_sendevent
 kthread
 numpy
 opencv_python
 pandas
+Pillow
 Pillow
 psutil
 pyperclip
@@ -30,5 +33,6 @@ regex
 sendevent_getevent_keyboard
 sendevent_touch
 subprocess_print_and_capture
+taskkill
 tesseractmultiprocessing
 touchtouch
