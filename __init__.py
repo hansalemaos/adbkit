@@ -2486,6 +2486,7 @@ class ADBTools:
     def aa_activate_scrcpy_screenshots_usb(
         self, adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0
     ):
+        screenwidth, screenheight = get_screen_height_width(self.adb_path, self.deviceserial)
         self.scrcpy_screenshot_usb = AdbShotUSB(
             device_serial=self.deviceserial,
             adb_path=self.adb_path,
@@ -2498,7 +2499,7 @@ class ADBTools:
             byte_package_size=131072,
             scrcpy_server_version="2.0",
             log_level="info",
-            max_video_width=0,
+            max_video_width=screenheight,
             start_server=False,
             connect_to_device=False,
         )
@@ -2506,6 +2507,8 @@ class ADBTools:
     def aa_activate_scrcpy_screenshots_tcp(
         self, adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0
     ):
+        screenwidth, screenheight = get_screen_height_width(self.adb_path, self.deviceserial)
+
         self.scrcpy_screenshot_tcp = AdbShotTCP(
             device_serial=self.deviceserial,
             adb_path=self.adb_path,
@@ -2518,7 +2521,7 @@ class ADBTools:
             byte_package_size=131072,
             scrcpy_server_version="2.0",
             log_level="info",
-            max_video_width=0,
+            max_video_width=screenheight,
             start_server=False,
             connect_to_device=False,
         )
