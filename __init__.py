@@ -17,6 +17,7 @@ from a_cv2_shape_finder import (
 from a_pandas_ex_adb_execute_activities import pd_add_adb_execute_activities
 
 from a_pandas_ex_image_tools import pd_add_image_tools
+from adb_push_create import push_file, make_folders
 from adbescapes import ADBInputEscaped
 
 from adbdevicechanger import AdbChanger
@@ -2486,7 +2487,9 @@ class ADBTools:
     def aa_activate_scrcpy_screenshots_usb(
         self, adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0
     ):
-        screenwidth, screenheight = get_screen_height_width(self.adb_path, self.deviceserial)
+        screenwidth, screenheight = get_screen_height_width(
+            self.adb_path, self.deviceserial
+        )
         self.scrcpy_screenshot_usb = AdbShotUSB(
             device_serial=self.deviceserial,
             adb_path=self.adb_path,
@@ -2507,7 +2510,9 @@ class ADBTools:
     def aa_activate_scrcpy_screenshots_tcp(
         self, adb_host_address="127.0.0.1", adb_host_port=5037, lock_video_orientation=0
     ):
-        screenwidth, screenheight = get_screen_height_width(self.adb_path, self.deviceserial)
+        screenwidth, screenheight = get_screen_height_width(
+            self.adb_path, self.deviceserial
+        )
 
         self.scrcpy_screenshot_tcp = AdbShotTCP(
             device_serial=self.deviceserial,
@@ -3239,6 +3244,19 @@ class ADBTools:
             exit_keys=exit_keys,
             print_output=print_output,
             timeout=timeout,
+        )
+
+    def aa_create_nested_folder_path(self, path):
+        return make_folders(
+            adb_path=self.adb_path, deviceserial=self.deviceserial, path2create=path
+        )
+
+    def aa_push_file_to_path(self, file, dest):
+        return push_file(
+            adb_path=self.adb_path,
+            deviceserial=self.deviceserial,
+            file=file,
+            dest=dest,
         )
 
     def aa_list_pids_basic(

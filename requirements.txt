@@ -10,6 +10,7 @@ a_pandas_ex_image_tools
 a_pandas_ex_logcat2df
 a_pandas_ex_tesseract_multirow_regex_fuzz
 adb_grep_search
+adb_push_create
 adb_unicode_keyboard
 adbblitz
 adbdevicechanger
