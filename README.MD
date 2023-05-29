@@ -5,6 +5,8 @@
 
 ### pip install adbkit
 
+#### If you are using Python 3.10 and get and Exception due to requests, execute pip install requests==2.31.0
+
 **Don't get confused about the instance "self". I did it because it is faster copying methods from the class :)** 
 
 **28/05/2023: Added fast screenshots with scrcpy - no root required and some other methods** 
