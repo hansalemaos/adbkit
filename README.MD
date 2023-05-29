@@ -9,10 +9,16 @@
 
 **Don't get confused about the instance "self". I did it because it is faster copying methods from the class :)** 
 
+## Here are some tutorials (Brazilian Portuguese)
+
 [![YT](https://github.com/hansalemaos/adbkit/raw/main/adbv/instagram.jpg)](https://www.youtube.com/watch?v=sUAxys08d48)
-
-
 [https://www.youtube.com/watch?v=sUAxys08d48]()
+
+[![YT](https://github.com/hansalemaos/adbkit/raw/main/adbv/tiktok.jpg)](https://www.youtube.com/watch?v=pWoDaTeobCw)
+[https://www.youtube.com/watch?v=pWoDaTeobCw]()
+
+[![YT](https://github.com/hansalemaos/adbkit/raw/main/adbv/youtube.jpg)](https://www.youtube.com/watch?v=sRYspWNviQI)
+[https://www.youtube.com/watch?v=sRYspWNviQI]()
 
 **28/05/2023: Added fast screenshots with scrcpy - no root required and some other methods** 
 
