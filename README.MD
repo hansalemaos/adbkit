@@ -9,6 +9,11 @@
 
 **Don't get confused about the instance "self". I did it because it is faster copying methods from the class :)** 
 
+[![YT](https://github.com/hansalemaos/adbkit/raw/main/adbv/instagram.jpg)](https://www.youtube.com/watch?v=sUAxys08d48)
+
+
+[https://www.youtube.com/watch?v=sUAxys08d48]()
+
 **28/05/2023: Added fast screenshots with scrcpy - no root required and some other methods** 
 
 ```python
