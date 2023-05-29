@@ -1,3 +1,4 @@
+Pillow
 a_cv2_imshow_thread
 a_cv2_shape_finder
 a_cv_imwrite_imread_plus
@@ -25,8 +26,6 @@ kthread
 numpy
 opencv_python
 pandas
-Pillow
-Pillow
 psutil
 pyperclip
 rapidfuzz
