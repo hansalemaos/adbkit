@@ -1,6 +1,6 @@
 # Easier ADB automation 
 
-## Tested against Windows 10, Python 3.9.13, BlueStacks 5.9.300.1014 N32
+## Tested against Windows 10, Python 3.10, BlueStacks 5.9.300.1014 N32 / Google Pixel 5
 ### Cygwin is necessary: https://www.cygwin.com/setup-x86_64.exe and needs to be added to the path variable!
 
 ### pip install adbkit
@@ -11,10 +11,6 @@
 
 ## Here are some tutorials (Brazilian Portuguese)
 
-[![YT](https://i.ytimg.com/vi/FMGveDZYG3Y/maxresdefault.jpg)](https://www.youtube.com/watch?v=FMGveDZYG3Y)
-[https://www.youtube.com/watch?v=FMGveDZYG3Y]()
-
-
 [![YT](https://github.com/hansalemaos/adbkit/raw/main/adbv/instagram.jpg)](https://www.youtube.com/watch?v=sUAxys08d48)
 [https://www.youtube.com/watch?v=sUAxys08d48]()
 
@@ -23,6 +19,66 @@
 
 [![YT](https://github.com/hansalemaos/adbkit/raw/main/adbv/youtube.jpg)](https://www.youtube.com/watch?v=sRYspWNviQI)
 [https://www.youtube.com/watch?v=sRYspWNviQI]()
+
+
+**03/08/2023: Added 2 methods to find parents/children** 
+
+```python
+
+### self.aa_get_all_displayed_items_from_uiautomator_parents_children
+
+# can be called without an existing DataFrame
+# *args, **kwargs are passed to: self.aa_get_all_displayed_items_from_uiautomator
+
+self.aa_update_screenshot()
+self.aa_get_all_displayed_items_from_uiautomator_parents_children(screenshotfolder='c:\\shotfolder')
+
+# can be called with an existing DataFrame from self.aa_get_all_displayed_items_from_uiautomator
+self.aa_get_all_displayed_items_from_uiautomator_parents_children(df,screenshotfolder='c:\\shotfolder')
+
+Adds 2 columns:
+   bb_index_parent  bb_index_child
+0               24             252
+1               38              70
+2               38             213
+3               43              38
+4               43              54
+5               43              70
+6               43              86
+7               43             102
+8               43             118
+9               43             134
+....
+
+
+### self.aa_get_all_displayed_items_from_activities_parents_children
+
+# can be called without an existing DataFrame
+# *args, **kwargs are passed to: self.aa_get_all_displayed_items_from_activities
+
+self.aa_update_screenshot()
+self.aa_get_all_displayed_items_from_activities_parents_children(screenshotfolder='c:\\shotfolder')
+
+# can be called with an existing DataFrame from self.aa_get_all_displayed_items_from_activities
+self.aa_get_all_displayed_items_from_activities_parents_children(df,screenshotfolder='c:\\shotfolder')
+
+
+Adds 2 columns:
+   aa_index_parent  aa_index_child
+0               24             252
+1               38              70
+2               38             213
+3               43              38
+4               43              54
+5               43              70
+6               43              86
+7               43             102
+8               43             118
+9               43             134
+....
+
+```
+
 
 **28/05/2023: Added fast screenshots with scrcpy - no root required and some other methods** 
 

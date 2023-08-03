@@ -2819,6 +2819,19 @@ class ADBTools:
         _, df_uiautomator, _ = andf.get_all_results()
         return df_uiautomator
 
+    def aa_get_all_displayed_items_from_uiautomator_parents_children(
+        self, df=None, *args, **kwargs
+    ):
+        try:
+            fetchdf = df.empty
+        except Exception:
+            fetchdf = True
+
+        if fetchdf:
+            df = self.aa_get_all_displayed_items_from_uiautomator(*args, **kwargs)
+
+        return self._find_children_parents(df, prefix="bb")
+
     def aa_get_all_displayed_items_from_activities(
         self,
         screenshotfolder: Union[str, None] = None,
@@ -2853,6 +2866,52 @@ class ADBTools:
         andf.get_df_from_activity(with_screenshot=with_screenshot)
         df_activities, _, _ = andf.get_all_results()
         return df_activities
+
+    def aa_get_all_displayed_items_from_activities_parents_children(
+        self, df=None, *args, **kwargs
+    ):
+        try:
+            fetchdf = df.empty
+        except Exception:
+            fetchdf = True
+
+        if fetchdf:
+            df = self.aa_get_all_displayed_items_from_activities(*args, **kwargs)
+
+        return self._find_children_parents(df, prefix="aa")
+
+    def _find_children_parents(self, df, prefix):
+        dfnotna = df.loc[
+            (~df[f"{prefix}_shapely"].isna())
+            & (df[f"{prefix}_area"] > 0)
+            & (df[f"{prefix}_area"] < (df[f"{prefix}_area"].max()))
+        ]
+        splitdf = [dfnotna.iloc[i : i + 1].copy() for i in range(len(dfnotna))]
+        df3 = dfnotna.ds_apply_ignore(
+            pd.NA,
+            lambda x: g
+            if not (
+                g := pd.concat(
+                    [
+                        item.assign(**{f"{prefix}_index_parent": x.name})
+                        for item in splitdf
+                        if x[f"{prefix}_shapely"].contains(
+                            item[f"{prefix}_shapely"].iloc[0]
+                        )
+                        and x.name != item.index[0]
+                        and (item[f"{prefix}_area"].iloc[0] < x[f"{prefix}_area"])
+                    ]
+                )
+            ).empty
+            else pd.NA,
+            axis=1,
+        )
+        dfparentchild = (
+            pd.concat(df3.dropna().to_list())
+            .assign(**{f"{prefix}_index_child": lambda x: x.index.__array__().copy()})
+            .reset_index(drop=True)
+        )
+        return dfparentchild
 
     def aa_list_folder_content(self, folder_to_search):
         return get_folder_df(self.deviceserial, self.adb_path, folder=folder_to_search)
@@ -3891,7 +3950,20 @@ class ADBTools:
         return adb_path_exists(self.adb_path, self.deviceserial, path)
 
     def aa_get_screen_resolution(self):
-        return get_screen_height_width(self.adb_path, self.deviceserial)
+        try:
+            return get_screen_height_width(self.adb_path, self.deviceserial)
+        except Exception:
+            screenshot=_get_n_adb_screenshots(
+                self.adb_path,
+                self.deviceserial,
+                sleeptime=None,
+                n=1,
+                gray=False,
+                ADAPTIVE_THRESH_MEAN_C=False,
+                ADAPTIVE_THRESH_GAUSSIAN_C=False,
+                THRESH_OTSU=False,
+            )
+            return screenshot.shape[:2][::-1]
 
     def aa_connect_to_device(self):
         connect_to_adb(self.adb_path, self.deviceserial)
