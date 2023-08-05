@@ -357,18 +357,31 @@ def get_screen_height_width(adb_path, deviceserial):
         print(screenheight, screenwidth)
 
     except Exception:
-        screenwidth, screenheight = (
-            subprocess.run(
-                rf'{adb_path} -s {deviceserial} shell dumpsys window | grep cur= |tr -s " " | cut -d " " -f 4|cut -d "=" -f 2',
-                shell=True,
-                capture_output=True,
-                **invisibledict,
+        try:
+            screenwidth, screenheight = (
+                subprocess.run(
+                    rf'{adb_path} -s {deviceserial} shell dumpsys window | grep cur= |tr -s " " | cut -d " " -f 4|cut -d "=" -f 2',
+                    shell=True,
+                    capture_output=True,
+                    **invisibledict,
+                )
+                .stdout.decode("utf-8", "ignore")
+                .strip()
+                .split("x")
             )
-            .stdout.decode("utf-8", "ignore")
-            .strip()
-            .split("x")
-        )
-        screenwidth, screenheight = int(screenwidth), int(screenheight)
+            screenwidth, screenheight = int(screenwidth), int(screenheight)
+        except Exception as fe:
+            screenshot=_get_n_adb_screenshots(
+                adb_path,
+                deviceserial,
+                sleeptime=None,
+                n=1,
+                gray=False,
+                ADAPTIVE_THRESH_MEAN_C=False,
+                ADAPTIVE_THRESH_GAUSSIAN_C=False,
+                THRESH_OTSU=False,
+            )
+            screenwidth, screenheight=next(screenshot).shape[:2][::-1]
     return screenwidth, screenheight
 
 
@@ -701,7 +714,7 @@ def adb_shell_change_to_folder_and_execute(
 
 
 def adb_open_shell(adb_path, deviceserial):
-    subprocess.run(f"start cmd /k {adb_path} -s {deviceserial} shell", shell=True)
+    subprocess.run(f"start cmd /k \"{adb_path}\" -s {deviceserial} shell", shell=True)
 
 
 def adb_swipe(
@@ -3950,20 +3963,7 @@ class ADBTools:
         return adb_path_exists(self.adb_path, self.deviceserial, path)
 
     def aa_get_screen_resolution(self):
-        try:
-            return get_screen_height_width(self.adb_path, self.deviceserial)
-        except Exception:
-            screenshot=_get_n_adb_screenshots(
-                self.adb_path,
-                self.deviceserial,
-                sleeptime=None,
-                n=1,
-                gray=False,
-                ADAPTIVE_THRESH_MEAN_C=False,
-                ADAPTIVE_THRESH_GAUSSIAN_C=False,
-                THRESH_OTSU=False,
-            )
-            return screenshot.shape[:2][::-1]
+        return get_screen_height_width(self.adb_path, self.deviceserial)
 
     def aa_connect_to_device(self):
         connect_to_adb(self.adb_path, self.deviceserial)
