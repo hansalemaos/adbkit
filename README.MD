@@ -1,3 +1,5 @@
+# Use https://github.com/hansalemaos/usefuladbplus - much faster, more methods, cleaner code 
+
 # Easier ADB automation 
 
 ## Tested against Windows 10, Python 3.10, BlueStacks 5.9.300.1014 N32 / Google Pixel 5
